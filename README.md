@@ -2,8 +2,8 @@
 Plugin for the [deluge](http://deluge-torrent.org/) torrent client that extracts compressed files upon torrent completion.
 
 * Target folder for extracting the torrent can be specified
-* Optionally a sub folder (name of torrent) can be created within the target folder
-* In-place extraction of the torrent in the torrent't download folder is possible as well
+* A sub folder (name of torrent) can be created within the target folder
+* In-place extraction of the torrent in the torrent's download folder is possible as well
 
 ##Supported File formats:
 
