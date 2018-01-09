@@ -5,7 +5,12 @@ Plugin for the [deluge](http://deluge-torrent.org/) torrent client that extracts
 * A sub folder (name of torrent) can be created within the target folder
 * In-place extraction of the torrent in the torrent's download folder is possible as well
 
-##Supported File formats:
+## Has been tested on:
+
+* Deluge 1.3.x on macOS and Debian Linux / CentOS 7
+* Deluge 1.3.5 on Windows 7
+
+## Supported File formats:
 
 UniX-ish supports:
 * .rar, .tar, .zip, .7z .tar.gz, .tgz, .tar.bz2, .tbz .tar.lzma, .tlz, .tar.xz, .txz
@@ -26,7 +31,7 @@ To build the python egg file:
 
 Download the [egg file](https://github.com/cvarta/deluge-extractor/releases/download/v.0.4.1/SimpleExtractor-0.4.1-py2.7.egg) of the plugin.
 
-#####Notes
+#### Notes
 * Plugin eggs have the Python version encoded in the filename and will only load in Deluge if the versions match. (e.g. Plugin-1.0-py2.7.egg is a Python 2.7 egg.)
 
 * On *nix systems, you can verify Python version with: ```python --version```
