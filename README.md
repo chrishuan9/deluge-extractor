@@ -62,11 +62,11 @@ Windows:
 
 When running the Deluge daemon, ``` deluged ``` and the Deluge client on separate computers, the plugin must be installed on both of them. When installing the egg through the GTK client it will be placed in the plugins directory of your computer, as well as copied over to the computer running the daemon.
 
-#####Note: If the Python versions on the server and desktop computer do not match, you will have to copy the egg file to the server manually.
+#### Note: If the Python versions on the server and desktop computer do not match, you will have to copy the egg file to the server manually.
 
 For example in the setup below you will have to install the py2.6 egg on the desktop as you normal would do but then manually install the py2.7 egg onto the server.
 
 * Windows desktop with Python 2.6 running GTK client.
 * Linux server with Python 2.7 running deluged
 
-######Note: The Windows installer comes bundled with python: either python 2.6 or 2.7 depending on the intstaller you used.
+#### Note: The Windows installer comes bundled with python: either python 2.6 or 2.7 depending on the intstaller you used.
