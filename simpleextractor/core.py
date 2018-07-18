@@ -170,7 +170,12 @@ class Core(CorePluginBase):
                 except Exception, e:
                     log.error("EXTRACTOR: Error creating destination folder: %s", e)
                     return
-
+  
+            # Dont Overwrite Existing Files
+            if os.stat(dest).st_size > 0
+               log.error("EXTRACTOR: Extract failed: %s already exists (%s)", fpath, torrent_id)
+               continue
+            
             def on_extract_success(result, torrent_id, fpath):
                 # XXX: Emit an event
                 log.info("EXTRACTOR: Extract successful: %s (%s)", fpath, torrent_id)
