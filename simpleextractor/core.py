@@ -134,10 +134,10 @@ class Core(CorePluginBase):
         """
         This is called when a torrent finishes and checks if any files to extract.
         """
-        tid = component.get("TorrentManager").torrents[torrent_id]
-        tid_status = tid.get_status(["save_path", "name"])
+        torrent = component.get("TorrentManager").torrents[torrent_id]
+        torrent_status = torrent.get_status(["save_path", "name"])
 
-        files = tid.get_files()
+        files = torrent.get_files()
         for f in files:
             file_root, file_ext = os.path.splitext(f["path"])
             file_ext_sec = os.path.splitext(file_root)[1]
@@ -149,19 +149,19 @@ class Core(CorePluginBase):
             cmd = EXTRACT_COMMANDS[file_ext]
 
             # Now that we have the cmd, lets run it to extract the files
-            fpath = os.path.join(tid_status["save_path"], os.path.normpath(f["path"]))
+            fpath = os.path.join(torrent_status["save_path"], os.path.normpath(f["path"]))
 
-            # Get the destination path
+            # Default: set destination to the plugin extraction path
             dest = os.path.normpath(self.config["extract_path"])
+
             if self.config["use_name_folder"]:
-                name = tid_status["name"]
+                # Override destination to the torrent named folder
+                name = torrent_status["name"]
                 dest = os.path.join(dest, name)
 
-            # Override destination if in_place_extraction is set
             if self.config["in_place_extraction"]:
-                name = tid_status["name"]
-                save_path = tid_status["save_path"]
-                dest = os.path.join(save_path,name)
+                # Override destination to the location of the file to be extracted.
+                dest = os.path.split(f["path"])[0]
 
             # Create the destination folder if it doesn't exist
             if not os.path.exists(dest):
