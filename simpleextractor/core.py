@@ -134,10 +134,10 @@ class Core(CorePluginBase):
         """
         This is called when a torrent finishes and checks if any files to extract.
         """
-        torrent = component.get("TorrentManager").torrents[torrent_id]
-        torrent_status = torrent.get_status(["save_path", "name"])
+        tid = component.get("TorrentManager").torrents[torrent_id]
+        tid_status = tid.get_status(["save_path", "name"])
 
-        files = torrent.get_files()
+        files = tid.get_files()
         for f in files:
             file_root, file_ext = os.path.splitext(f["path"])
             file_ext_sec = os.path.splitext(file_root)[1]
@@ -149,14 +149,14 @@ class Core(CorePluginBase):
             cmd = EXTRACT_COMMANDS[file_ext]
 
             # Now that we have the cmd, lets run it to extract the files
-            fpath = os.path.join(torrent_status["save_path"], os.path.normpath(f["path"]))
+            fpath = os.path.join(tid_status["save_path"], os.path.normpath(f["path"]))
 
             # Default: set destination to the plugin extraction path
             dest = os.path.normpath(self.config["extract_path"])
 
             if self.config["use_name_folder"]:
                 # Override destination to the torrent named folder
-                name = torrent_status["name"]
+                name = tid_status["name"]
                 dest = os.path.join(dest, name)
 
             if self.config["in_place_extraction"]:
