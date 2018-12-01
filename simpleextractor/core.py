@@ -151,17 +151,17 @@ class Core(CorePluginBase):
             # Now that we have the cmd, lets run it to extract the files
             fpath = os.path.join(tid_status["save_path"], os.path.normpath(f["path"]))
 
-            # Get the destination path
+            # Default: set destination to the plugin extraction path
             dest = os.path.normpath(self.config["extract_path"])
+
             if self.config["use_name_folder"]:
+                # Override destination to the torrent named folder
                 name = tid_status["name"]
                 dest = os.path.join(dest, name)
 
-            # Override destination if in_place_extraction is set
             if self.config["in_place_extraction"]:
-                name = tid_status["name"]
-                save_path = tid_status["save_path"]
-                dest = os.path.join(save_path,name)
+                # Override destination to the location of the file to be extracted.
+                dest = os.path.split(f["path"])[0]
 
             # Create the destination folder if it doesn't exist
             if not os.path.exists(dest):
