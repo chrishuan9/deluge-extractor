@@ -39,6 +39,7 @@
 #
 
 from deluge.plugins.init import PluginInitBase
+from __future__ import unicode_literals
 
 class CorePlugin(PluginInitBase):
     def __init__(self, plugin_name):

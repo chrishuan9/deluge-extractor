@@ -2,7 +2,7 @@
  * simpleextractor.js
  *
  * Copyright (c) Damien Churchill 2010 <damoxc@gmail.com>
- * Copyright (C) 2015 Chris Yereaztian <chris.yereaztian@gmail.com>
+  * Copyright (C) Digitalhigh 2019 <donate.to.digitalhigh@gmail.com>
  *
  * This file is part of Deluge and is licensed under GNU General Public License 3.0, or later, with
  * the additional special exception to link portions of this program with the OpenSSL library.
