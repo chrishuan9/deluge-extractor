@@ -28,7 +28,7 @@ from deluge.plugins.pluginbase import CorePluginBase
 
 log = logging.getLogger(__name__)
 
-DEFAULT_PREFS = {'extract_path': '', 'use_name_folder': True, 'in_place_extraction': True}
+DEFAULT_PREFS = {'extract_path': '', 'use_name_folder': False, 'in_place_extraction': True}
 
 if windows_check():
     win_7z_exes = [
@@ -128,6 +128,7 @@ class Core(CorePluginBase):
 
         files = tid.get_files()
         for f in files:
+            log.debug("Handling file %s", f['path'])
             file_root, file_ext = os.path.splitext(f['path'])
             file_ext_sec = os.path.splitext(file_root)[1]
             if file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
@@ -152,17 +153,18 @@ class Core(CorePluginBase):
             # Override destination if in_place_extraction is set
             if self.config["in_place_extraction"]:
                 name = tid_status["name"]
-                save_path = tid_status["save_path"]
-                dest = os.path.join(save_path,name)
+                save_path = tid_status["download_location"]
+                dest = os.path.join(save_path, name)
+                log.debug("Save path is %s, dest is %s, fpath is %s", save_path, dest, fpath)
 
             # Create the destination folder if it doesn't exist
             if not os.path.exists(dest):
-            try:
-                os.makedirs(dest)
-            except OSError as ex:
-                if not (ex.errno == errno.EEXIST and os.path.isdir(dest)):
-                    log.error('Error creating destination folder: %s', ex)
-                    break
+                try:
+                    os.makedirs(dest)
+                except OSError as ex:
+                    if not (ex.errno == errno.EEXIST and os.path.isdir(dest)):
+                        log.error('Error creating destination folder: %s', ex)
+                        break
 
             def on_extract(result, torrent_id, fpath):
                 # Check command exit code.

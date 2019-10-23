@@ -39,7 +39,7 @@ class GtkUI(Gtk3PluginBase):
         self.builder.add_from_file(get_resource('extractor_prefs.ui'))
 
         component.get('Preferences').add_page(
-            _('Extractor'), self.builder.get_object('extractor_prefs_box')
+            _('SimpleExtractor'), self.builder.get_object('extractor_prefs_box')
         )
         component.get('PluginManager').register_hook(
             'on_apply_prefs', self.on_apply_prefs
@@ -50,7 +50,7 @@ class GtkUI(Gtk3PluginBase):
         self.on_show_prefs()
 
     def disable(self):
-        component.get('Preferences').remove_page(_('Extractor'))
+        component.get('Preferences').remove_page(_('SimpleExtractor'))
         component.get('PluginManager').deregister_hook(
             'on_apply_prefs', self.on_apply_prefs
         )
@@ -60,7 +60,7 @@ class GtkUI(Gtk3PluginBase):
         del self.builder
 
     def on_apply_prefs(self):
-        log.debug('applying prefs for Extractor')
+        log.debug('applying prefs for Simple Extractor')
         if client.is_localhost():
             path = self.builder.get_object('folderchooser_path').get_filename()
         else:
