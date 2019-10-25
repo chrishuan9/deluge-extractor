@@ -69,7 +69,8 @@ class GtkUI(Gtk3PluginBase):
         config = {
             'extract_path': path,
             'use_name_folder': self.builder.get_object('chk_use_name').get_active(),
-            'in_place_extraction': self.builder.get_object("chk_in_place_extraction").get_active()
+            'in_place_extraction': self.builder.get_object("chk_in_place_extraction").get_active(),
+            'extract_labels': self.builder.get_object("entry_labels").get_text()
         }
 
         client.extractor.set_config(config)
@@ -94,5 +95,6 @@ class GtkUI(Gtk3PluginBase):
                 config['use_name_folder']
             )
 			self.builder.get_object('chk_in_place_extraction').set_active(config['in_place_extraction'])
+            self.builder.get_object('entry_labels').set_text(config['extract_labels'])
 
         client.extractor.get_config().addCallback(on_get_config)
