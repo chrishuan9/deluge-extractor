@@ -16,7 +16,7 @@ from setuptools import find_packages, setup
 __plugin_name__ = 'SimpleExtractor'
 __author__ = 'Digitalhigh'
 __author_email__ = 'donate.to.digitalhigh@gmail.com'
-__version__ = '1.0'
+__version__ = '1.1'
 __url__ = 'github.com/d8ahazard/deluge-extractor'
 __license__ = 'GPLv3'
 __description__ = 'Extract files upon torrent completion'
@@ -30,7 +30,7 @@ Windows support: .rar, .zip, .tar, .7z, .xz, .lzma
 
 Note: Will not extract with 'Move Completed' enabled
 """
-__pkg_data__ = {__plugin_name__.lower(): ['template/*', 'data/*']}
+__pkg_data__ = {'deluge_' + __plugin_name__.lower(): ['data/*', '7z.dll', '7z.exe']}
 
 setup(
     name=__plugin_name__,
@@ -40,16 +40,17 @@ setup(
     author_email=__author_email__,
     url=__url__,
     license=__license__,
-    long_description=__long_description__ if __long_description__ else __description__,
-    packages=[__plugin_name__.lower()],
+    zip_safe=False,
+    long_description=__long_description__,
+    packages=find_packages(),
     package_data=__pkg_data__,
     entry_points="""
     [deluge.plugin.core]
-    %s = %s:CorePlugin
+    %s = deluge_%s:CorePlugin
     [deluge.plugin.gtk3ui]
-    %s = %s:GtkUIPlugin
+    %s = deluge_%s:GtkUIPlugin
     [deluge.plugin.web]
-    %s = %s:WebUIPlugin
+    %s = deluge_%s:WebUIPlugin
     """
     % ((__plugin_name__, __plugin_name__.lower()) * 3),
 )

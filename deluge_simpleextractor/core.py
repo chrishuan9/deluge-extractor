@@ -29,7 +29,11 @@ from deluge.plugins.pluginbase import CorePluginBase
 
 log = logging.getLogger(__name__)
 
-DEFAULT_PREFS = {'extract_path': '', 'use_name_folder': False, 'in_place_extraction': True, 'extract_labels': ''}
+DEFAULT_PREFS = {'extract_path': '',
+                 'extract_in_place': False,
+                 'extract_selected_folder': False,
+                 'extract_torrent_root': True,
+                 'label_filter': ''}
 
 if windows_check():
     win_7z_exes = [
@@ -37,20 +41,6 @@ if windows_check():
         'C:\\Program Files\\7-Zip\\7z.exe',
         'C:\\Program Files (x86)\\7-Zip\\7z.exe',
     ]
-
-    try:
-        import winreg
-    except ImportError:
-        import _winreg as winreg  # For Python 2.
-
-    try:
-        hkey = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Software\\7-Zip')
-    except WindowsError:
-        pass
-    else:
-        win_7z_path = os.path.join(winreg.QueryValueEx(hkey, 'Path')[0], '7z.exe')
-        winreg.CloseKey(hkey)
-        win_7z_exes.insert(1, win_7z_path)
 
     switch_7z = 'x -y'
     # Future suport:
@@ -128,12 +118,16 @@ class Core(CorePluginBase):
         tid_status = tid.get_status(['download_location', 'name'])
         tstatus = tid.get_status([], False, False, True)
         do_extract = False
+        tid = component.get("TorrentManager").torrents[torrent_id]
+        tid_status = tid.get_status(["save_path", "name"])
+
+        tid.is_finished = False
         log.info("Processing completed torrent %s", tstatus)
         # Fetch our torrent's label
         labels = self.get_labels(torrent_id)
         log.info("Schmancy label collector: %s", labels)
         # If we've set a label filter, process it
-        if self.config['extract_labels'] is not "":
+        if self.config['label_filter'] is not "":
             log.info("We should filter by label(s): %s", self.config['extract_labels'])
             # Make sure there's actually a label
             if len(labels) > 0:
@@ -165,6 +159,9 @@ class Core(CorePluginBase):
             do_extract = True
 
         # Now, extract if filter match or no filter set
+        extract_in_place = self.config["extract_in_place"]
+        extract_torrent_root = self.config["extract_torrent_root"]
+
         if do_extract:
             files = tid.get_files()
             for f in files:
@@ -183,28 +180,29 @@ class Core(CorePluginBase):
                         continue
 
                 cmd = EXTRACT_COMMANDS[file_ext]
+
                 fpath = os.path.join(
                     tid_status['download_location'], os.path.normpath(f['path'])
                 )
-                dest = os.path.normpath(self.config['extract_path'])
-                if self.config['use_name_folder']:
-                    dest = os.path.join(dest, tid_status['name'])
+
+                # Get the destination path
+                dest = os.path.normpath(self.config["extract_path"])
+                name_dest = os.path.join(dest, tid_status["name"])
 
                 # Override destination if in_place_extraction is set
-                if self.config["in_place_extraction"]:
-                    name = tid_status["name"]
-                    save_path = tid_status["download_location"]
-                    dest = os.path.join(save_path, name)
-                    log.info("Save path is %s, dest is %s, fpath is %s", save_path, dest, fpath)
+                if extract_torrent_root:
+                    dest = tid_status["save_path"]
+                    name_dest = os.path.join(dest, tid_status["name"])
 
-                # Create the destination folder if it doesn't exist
-                if not os.path.exists(dest):
-                    try:
-                        os.makedirs(dest)
-                    except OSError as ex:
-                        if not (ex.errno == errno.EEXIST and os.path.isdir(dest)):
-                            log.error('Error creating destination folder: %s', ex)
-                            break
+                if extract_in_place and ((not os.path.exists(name_dest)) or os.path.isdir(name_dest)):
+                    dest = name_dest
+
+                try:
+                    os.makedirs(dest)
+                except OSError as ex:
+                    if not (ex.errno == errno.EEXIST and os.path.isdir(dest)):
+                        log.error("EXTRACTOR: Error creating destination folder: %s", ex)
+                        break
 
                 def on_extract(result, torrent_id, fpath):
                     # Check command exit code.
@@ -228,6 +226,7 @@ class Core(CorePluginBase):
                     cmd[0], cmd[1].split() + [str(fpath)], os.environ, str(dest)
                 )
                 d.addCallback(on_extract, torrent_id, fpath)
+                tid.is_finished = True
 
     def get_labels(self, torrent_id):
         """
