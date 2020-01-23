@@ -115,39 +115,37 @@ class Core(CorePluginBase):
         This is called when a torrent finishes and checks if any files to extract.
         """
         tid = component.get('TorrentManager').torrents[torrent_id]
-        tid_status = tid.get_status(['download_location', 'name'])
-        tstatus = tid.get_status([], False, False, True)
+        t_status = tid.get_status([], False, False, True)
         do_extract = False
-        tid = component.get("TorrentManager").torrents[torrent_id]
-        tid_status = tid.get_status(["save_path", "name"])
 
-        tid.is_finished = False
-        log.info("Processing completed torrent %s", tstatus)
+        log.info("Processing completed torrent %s", t_status)
         # Fetch our torrent's label
         labels = self.get_labels(torrent_id)
-        log.info("Schmancy label collector: %s", labels)
+        log.info("Labels collected: %s", labels)
         # If we've set a label filter, process it
-        if self.config['label_filter'] is not "":
-            log.info("We should filter by label(s): %s", self.config['extract_labels'])
+        filters = self.config['label_filter']
+        log.info("Saved filters:", filters)
+        if filters is not "":
             # Make sure there's actually a label
             if len(labels) > 0:
                 for label in labels:
                     log.info("Label for torrent is %s", label)
                     # Check if it's more than one, split
-                    if "," in self.config['extract_labels']:
+                    if "," in self.config['label_filter']:
                         log.info("And we have a list")
-                        label_list = self.config['extract_labels'].split(",")
+                        label_list = filters.split(",")
                         # And loop
-                        for label in label_list:
-                            if label.strip() == label:
-                                log.info("This matches")
+                        for check in label_list:
+                            print("Comparing " + label + " to " + check)
+                            if check.strip() == label:
+                                log.info("This matches, we should extract it.")
                                 do_extract = True
                                 break
                     # Otherwise, just check the whole string
                     else:
-                        log.info("Single label string detected.")
-                        if self.config['extract_labels'].strip() == label:
-                            log.info("This matches")
+                        log.info("Single label string detected: ", filters)
+                        if filters.strip() == label:
+                            log.info("This matches, we should extract it.")
                             do_extract = True
             # We don't need to do this, but it adds sanity
             else:
@@ -166,9 +164,11 @@ class Core(CorePluginBase):
             files = tid.get_files()
             for f in files:
                 log.info("Handling file %s", f['path'])
+                f_parent = os.path.dirname(f['path'])
                 file_root, file_ext = os.path.splitext(f['path'])
                 file_ext_sec = os.path.splitext(file_root)[1]
                 if file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
+                    log.info("We should extract this.")
                     file_ext = file_ext_sec + file_ext
                 elif file_ext not in EXTRACT_COMMANDS or file_ext_sec == '.tar':
                     log.info('Cannot extract file with unknown file type: %s', f['path'])
@@ -182,20 +182,21 @@ class Core(CorePluginBase):
                 cmd = EXTRACT_COMMANDS[file_ext]
 
                 fpath = os.path.join(
-                    tid_status['download_location'], os.path.normpath(f['path'])
+                    t_status['download_location'], os.path.normpath(f['path'])
                 )
 
-                # Get the destination path
+                # Get the destination path, use that by default
                 dest = os.path.normpath(self.config["extract_path"])
-                name_dest = os.path.join(dest, tid_status["name"])
+                name_dest = os.path.join(dest, t_status["name"])
 
-                # Override destination if in_place_extraction is set
+                # Override destination if extract_torrent_root is set
                 if extract_torrent_root:
-                    dest = tid_status["save_path"]
-                    name_dest = os.path.join(dest, tid_status["name"])
-
-                if extract_in_place and ((not os.path.exists(name_dest)) or os.path.isdir(name_dest)):
                     dest = name_dest
+
+                # Override destination to file path if in_place set
+                if extract_in_place and ((not os.path.exists(f_parent)) or os.path.isdir(f_parent)):
+                    dest = f_parent
+                    log.debug("Extracting in-place: " + dest)
 
                 try:
                     os.makedirs(dest)
@@ -226,7 +227,7 @@ class Core(CorePluginBase):
                     cmd[0], cmd[1].split() + [str(fpath)], os.environ, str(dest)
                 )
                 d.addCallback(on_extract, torrent_id, fpath)
-                tid.is_finished = True
+        log.info("Torrent extraction/handling complete.")
 
     def get_labels(self, torrent_id):
         """
@@ -250,7 +251,6 @@ class Core(CorePluginBase):
                     log.info("We have a label plus mapping: %s", mapping)
                     labels.append(label_plus_config['labels'][mapping]['name'])
         return labels
-
 
     @export
     def set_config(self, config):
