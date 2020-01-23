@@ -9,6 +9,15 @@ This is updated to work on Deluge V2. I'm not sure if it'll work with V1 version
 * A sub folder (name of torrent) can be created within the target folder
 * In-place extraction of the torrent in the torrent's download folder is possible as well
 
+# Features
+Optional download locations:
+* In-place: Extract each .rar file to it's exact location. If a file is in /downloads/TORRENTNAME/subs/subs.rar, it will be extracted to /downloads/TORRENTNAME/subs/.
+* Torrent root: Extract each rar to the root of the torrent download. If a file is in /downloads/TORRENTNAME/sub/subs.rar, it will be extracted to /downloads/TORRENTNAME/.
+* Selected Folder: Extract to a directory that you specify.
+
+Label filtering:
+Enter a comma-separated list of labels, only those labels will be extracted. Works with the default labels plugin, as well as labelplus.
+
 ## Has been tested on:
 
 * Deluge 2.0.3
