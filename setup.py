@@ -16,7 +16,7 @@ from setuptools import find_packages, setup
 __plugin_name__ = 'SimpleExtractor'
 __author__ = 'Digitalhigh'
 __author_email__ = 'donate.to.digitalhigh@gmail.com'
-__version__ = '1.2'
+__version__ = '1.3'
 __url__ = 'github.com/d8ahazard/deluge-extractor'
 __license__ = 'GPLv3'
 __description__ = 'Extract files upon torrent completion'
