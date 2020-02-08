@@ -117,7 +117,7 @@ class Core(CorePluginBase):
         tid = component.get('TorrentManager').torrents[torrent_id]
         t_status = tid.get_status([], False, False, True)
         do_extract = False
-
+        tid.is_finished = False
         log.info("Processing completed torrent %s", t_status)
         # Fetch our torrent's label
         labels = self.get_labels(torrent_id)
@@ -227,6 +227,8 @@ class Core(CorePluginBase):
                     cmd[0], cmd[1].split() + [str(fpath)], os.environ, str(dest)
                 )
                 d.addCallback(on_extract, torrent_id, fpath)
+
+        tid.is_finished = True
         log.info("Torrent extraction/handling complete.")
 
     def get_labels(self, torrent_id):
