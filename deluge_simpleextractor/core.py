@@ -65,6 +65,7 @@ else:
 
     EXTRACT_COMMANDS = {
         '.rar': ['unrar', 'x -o+ -y'],
+        '.r00': ['unrar', 'x -o+ -y'],
         '.tar': ['tar', '-xf'],
         '.zip': ['unzip', ''],
         '.tar.gz': ['tar', '-xzf'],
