@@ -164,7 +164,6 @@ class Core(CorePluginBase):
             files = tid.get_files()
             for f in files:
                 log.info("Handling file %s", f['path'])
-                f_parent = os.path.dirname(f['path'])
                 file_root, file_ext = os.path.splitext(f['path'])
                 file_ext_sec = os.path.splitext(file_root)[1]
                 if file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
@@ -181,19 +180,17 @@ class Core(CorePluginBase):
 
                 cmd = EXTRACT_COMMANDS[file_ext]
 
-                fpath = os.path.join(
-                    t_status['download_location'], os.path.normpath(f['path'])
-                )
+                fpath = os.path.normpath(os.path.join(t_status['download_location'], f['path']))
 
                 # Get the destination path, use that by default
                 dest = os.path.normpath(self.config["extract_path"])
-                name_dest = os.path.join(dest, t_status["name"])
 
                 # Override destination if extract_torrent_root is set
                 if extract_torrent_root:
-                    dest = name_dest
+                    dest = os.path.join(os.path.normpath(t_status['download_location']), t_status['name'])
 
                 # Override destination to file path if in_place set
+                f_parent = os.path.normpath(os.path.join(t_status['download_location'], os.path.dirname(f['path'])))
                 if extract_in_place and ((not os.path.exists(f_parent)) or os.path.isdir(f_parent)):
                     dest = f_parent
                     log.debug("Extracting in-place: " + dest)
