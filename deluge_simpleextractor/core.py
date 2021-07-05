@@ -126,7 +126,7 @@ class Core(CorePluginBase):
         # If we've set a label filter, process it
         filters = self.config['label_filter']
         log.info("Saved filters:", filters)
-        if filters is not "":
+        if filters != "":
             # Make sure there's actually a label
             if len(labels) > 0:
                 for label in labels:
@@ -235,7 +235,7 @@ class Core(CorePluginBase):
         """
         labels = []
         label_config = ConfigManager('label.conf', defaults=False)
-        if label_config is not False:
+        if label_config != False:
             log.info("We have a Label config")
             if 'torrent_labels' in label_config:
                 if torrent_id in label_config['torrent_labels']:
@@ -243,7 +243,7 @@ class Core(CorePluginBase):
                     labels.append(label_config['torrent_labels'][torrent_id])
 
         label_plus_config = ConfigManager('labelplus.conf', defaults=False)
-        if label_plus_config is not False:
+        if label_plus_config != False:
             log.info("We have a label plus config")
             if 'mappings' in label_plus_config:
                 if torrent_id in label_plus_config['mappings']:
