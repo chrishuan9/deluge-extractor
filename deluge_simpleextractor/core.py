@@ -167,7 +167,11 @@ class Core(CorePluginBase):
                 log.info("Handling file %s", f['path'])
                 file_root, file_ext = os.path.splitext(f['path'])
                 file_ext_sec = os.path.splitext(file_root)[1]
-                if file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
+                
+                if file_ext == '.r00' and any(x['path'] == file_root + '.rar' for x in files):
+                    log.info('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
+                    continue
+                elif file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
                     log.info("We should extract this.")
                     file_ext = file_ext_sec + file_ext
                 elif file_ext not in EXTRACT_COMMANDS or file_ext_sec == '.tar':
@@ -178,9 +182,6 @@ class Core(CorePluginBase):
                     if part_num.isdigit() and int(part_num) != 1:
                         log.info('Skipping remaining multi-part rar files: %s', f['path'])
                         continue
-                elif file_ext == '.r00' and any(x['path'] == file_root + ".rar" for x in files):
-                    log.info('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
-                    continue
 
                 cmd = EXTRACT_COMMANDS[file_ext]
 
