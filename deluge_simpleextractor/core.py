@@ -170,7 +170,6 @@ class Core(CorePluginBase):
                 
                 if file_ext == '.r00' and any(x['path'] == file_root + '.rar' for x in files):
                     log.info('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
-                    continue
                 elif file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
                     log.info("We should extract this.")
                     file_ext = file_ext_sec + file_ext
