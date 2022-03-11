@@ -178,6 +178,9 @@ class Core(CorePluginBase):
                     if part_num.isdigit() and int(part_num) != 1:
                         log.info('Skipping remaining multi-part rar files: %s', f['path'])
                         continue
+                elif file_ext == '.r00' and any(x['path'] == file_root + ".rar" for x in files):
+                    log.info('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
+                    continue
 
                 cmd = EXTRACT_COMMANDS[file_ext]
 
