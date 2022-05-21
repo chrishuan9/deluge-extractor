@@ -207,7 +207,7 @@ class Core(CorePluginBase):
                         log.error("EXTRACTOR: Error creating destination folder: %s", ex)
                         break
 
-                def on_extract(result, torrent_id, fpath):
+                def on_extract(result, torrent_id, fpath, tid):
                     # Check command exit code.
                     if not result[2]:
                         log.info('Extract successful: %s (%s)', fpath, torrent_id)
@@ -215,6 +215,9 @@ class Core(CorePluginBase):
                         log.error(
                             'Extract failed: %s (%s) %s', fpath, torrent_id, result[1]
                         )
+                    # Don't mark an extracting torrent complete until callback is fired.
+                    tid.is_finished = True
+                    log.info("Torrent extraction/handling complete.")
 
                 # Run the command and add callback.
                 log.info(
@@ -228,10 +231,10 @@ class Core(CorePluginBase):
                 d = getProcessOutputAndValue(
                     cmd[0], cmd[1].split() + [str(fpath)], os.environ, str(dest)
                 )
-                d.addCallback(on_extract, torrent_id, fpath)
-
-        tid.is_finished = True
-        log.info("Torrent extraction/handling complete.")
+                d.addCallback(on_extract, torrent_id, fpath, tid)
+        else:
+            tid.is_finished = True
+            log.info("Torrent extraction/handling complete.")
 
     def get_labels(self, torrent_id):
         """
