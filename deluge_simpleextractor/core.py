@@ -45,15 +45,21 @@ if windows_check():
     switch_7z = 'x -y'
     # Future suport:
     # 7-zip cannot extract tar.* with single command.
-    #    ".tar.gz", ".tgz",
     #    ".tar.bz2", ".tbz",
     #    ".tar.lzma", ".tlz",
     #    ".tar.xz", ".txz",
+    # BUT - Windows 10 can...see below
     exts_7z = ['.rar', '.zip', '.tar', '.7z', '.xz', '.lzma']
     for win_7z_exe in win_7z_exes:
         if which(win_7z_exe):
             EXTRACT_COMMANDS = dict.fromkeys(exts_7z, [win_7z_exe, switch_7z])
             break
+    # Windows 10 build 17063 added the 'nix Tar command, so let's support it. (No xz/bz2/lzma yet)
+    if which('tar'):
+        EXTRACT_COMMANDS['.tar'] = ['tar', '-xf'],
+        EXTRACT_COMMANDS['.tar.gz'] = ['tar', '-xzf'],
+        EXTRACT_COMMANDS['.tgz'] = ['tar', '-xzf']
+
 else:
     required_cmds = ['unrar', 'unzip', 'tar', 'unxz', 'unlzma', '7zr', 'bunzip2']
     # Possible future suport:
