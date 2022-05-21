@@ -61,13 +61,7 @@ if windows_check():
         EXTRACT_COMMANDS['.tgz'] = ['tar', '-xzf']
 
 else:
-    required_cmds = ['unrar', 'unzip', 'tar', 'unxz', 'unlzma', '7zr', 'bunzip2']
-    # Possible future suport:
-    # gunzip: gz (cmd will delete original archive)
-    # the following do not extract to dest dir
-    # ".xz": ["xz", "-d --keep"],
-    # ".lzma": ["xz", "-d --format=lzma --keep"],
-    # ".bz2": ["bzip2", "-d --keep"],
+    required_cmds = ['unrar', 'unzip', 'tar', '7zr']
 
     EXTRACT_COMMANDS = {
         '.rar': ['unrar', 'x -o+ -y'],
@@ -80,9 +74,9 @@ else:
         '.tbz': ['tar', '-xjf'],
         '.tar.lzma': ['tar', '--lzma -xf'],
         '.tlz': ['tar', '--lzma -xf'],
-        '.tar.xz': ['tar', '--xz -xf'],
-        '.txz': ['tar', '--xz -xf'],
-        '.7z': ['7zr', 'x'],
+        '.tar.xz': ['tar', '-Jf'],
+        '.txz': ['tar', '--xJf'],
+        '.7z': ['7zr', 'x']
     }
     # Test command exists and if not, remove.
     for command in required_cmds:
