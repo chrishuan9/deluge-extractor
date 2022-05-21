@@ -16,16 +16,13 @@ from __future__ import unicode_literals
 import errno
 import logging
 import os
+from deluge.common import windows_check
+from deluge.configmanager import ConfigManager
+from deluge.core.rpcserver import export
+from deluge.plugins.pluginbase import CorePluginBase
 
 from twisted.internet.utils import getProcessOutputAndValue
 from twisted.python.procutils import which
-
-import deluge.component as component
-import deluge.configmanager
-from deluge.configmanager import ConfigManager
-from deluge.common import windows_check
-from deluge.core.rpcserver import export
-from deluge.plugins.pluginbase import CorePluginBase
 
 log = logging.getLogger(__name__)
 
@@ -39,11 +36,11 @@ if windows_check():
     win_7z_exes = [
         '7z.exe',
         'C:\\Program Files\\7-Zip\\7z.exe',
-        'C:\\Program Files (x86)\\7-Zip\\7z.exe',
+        'C:\\Program Files (x86)\\7-Zip\\7z.exe'
     ]
 
     switch_7z = 'x -y'
-    # Future suport:
+    # Future support:
     # 7-zip cannot extract tar.* with single command.
     #    ".tar.bz2", ".tbz",
     #    ".tar.lzma", ".tlz",
@@ -167,7 +164,6 @@ class Core(CorePluginBase):
                 log.info("Handling file %s", f['path'])
                 file_root, file_ext = os.path.splitext(f['path'])
                 file_ext_sec = os.path.splitext(file_root)[1]
-                
                 if file_ext == '.r00' and any(x['path'] == file_root + '.rar' for x in files):
                     log.info('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
                     continue
