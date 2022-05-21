@@ -242,7 +242,7 @@ class Core(CorePluginBase):
         """
         labels = []
         label_config = ConfigManager('label.conf', defaults=False)
-        if label_config != False:
+        if label_config:
             log.info("We have a Label config")
             if 'torrent_labels' in label_config:
                 if torrent_id in label_config['torrent_labels']:
@@ -250,7 +250,7 @@ class Core(CorePluginBase):
                     labels.append(label_config['torrent_labels'][torrent_id])
 
         label_plus_config = ConfigManager('labelplus.conf', defaults=False)
-        if label_plus_config != False:
+        if label_plus_config:
             log.info("We have a label plus config")
             if 'mappings' in label_plus_config:
                 if torrent_id in label_plus_config['mappings']:
