@@ -13,6 +13,8 @@
 
 from __future__ import unicode_literals
 
+import deluge.component as component
+import deluge.configmanager
 import errno
 import logging
 import os
