@@ -20,7 +20,7 @@ Enter a comma-separated list of labels, only those labels will be extracted. Wor
 
 ## Has been tested on:
 
-* Deluge 2.0.3
+* Deluge 2.0.5
 
 
 ## Supported File formats:
