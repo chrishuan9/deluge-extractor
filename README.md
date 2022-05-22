@@ -1,14 +1,27 @@
 # deluge-extractor
-Plugin for the [deluge](http://deluge-torrent.org/) torrent client that extracts compressed files upon torrent completion.
+Plugin for the [deluge](http://deluge-torrent.org/) *V2* torrent client that extracts compressed files upon torrent completion.
+
+This is a modified version of the "Extractor" plugin, with the added option to extract in place.
+
+This is updated to work on Deluge V2. I'm not sure if it'll work with V1 versions...you tell me. I think it should.0
 
 * Target folder for extracting the torrent can be specified
 * A sub folder (name of torrent) can be created within the target folder
 * In-place extraction of the torrent in the torrent's download folder is possible as well
 
+# Features
+Optional download locations:
+* In-place: Extract each .rar file to it's exact location. If a file is in /downloads/TORRENTNAME/subs/subs.rar, it will be extracted to /downloads/TORRENTNAME/subs/.
+* Torrent root: Extract each rar to the root of the torrent download. If a file is in /downloads/TORRENTNAME/sub/subs.rar, it will be extracted to /downloads/TORRENTNAME/.
+* Selected Folder: Extract to a directory that you specify.
+
+Label filtering:
+Enter a comma-separated list of labels, only those labels will be extracted. Works with the default labels plugin, as well as labelplus.
+
 ## Has been tested on:
 
-* Deluge 1.3.x on macOS and Debian Linux / CentOS 7
-* Deluge 1.3.5 on Windows 7
+* Deluge 2.0.5
+
 
 ## Supported File formats:
 
@@ -70,3 +83,10 @@ For example in the setup below you will have to install the py2.6 egg on the des
 * Linux server with Python 2.7 running deluged
 
 #### Note: The Windows installer comes bundled with python: either python 2.6 or 2.7 depending on the intstaller you used.
+
+
+### Support my work?
+
+If you dig this plugin and want to say thanks, the best way to do it is by sending a paypal donation to donate.to.digitalhigh@gmail.com
+
+All donations are appreciated...but none are required :D
