@@ -19,6 +19,7 @@ import os
 import subprocess
 import traceback
 from shutil import which
+from threading import Thread
 
 import deluge.component as component
 import deluge.configmanager
@@ -215,28 +216,33 @@ class Core(CorePluginBase):
                 cmd = EXTRACT_COMMANDS[file_ext]
                 # Append file path
                 cmd.append(fpath)
-
-                # Do it!
-                try:
-                    log.debug('Extracting with command: "%s" from working dir "%s"', " ".join(cmd), str(dest))
-                    process = subprocess.run(cmd, cwd=dest, capture_output=True)
-
-                    if process.returncode == 0:
-                        log.info('Extract successful!')
-                    else:
-                        log.error(
-                            'Extract failed: %s with code %s', fpath, process.returncode
-                        )
-                except Exception as ex:
-                    log.error("Exception:", traceback.format_exc())
-
-                # Don't mark an extracting torrent complete until callback is fired.
-                tid.is_finished = True
-                log.info("Torrent extraction/handling complete.")
+                log.debug("Creating thread...")
+                thread = Thread(target=self.do_extract, args=(cmd, dest, torrent_id, fpath))
+                thread.start()
 
         else:
             tid.is_finished = True
             log.info("Torrent extraction/handling complete.")
+
+    def do_extract(self, cmd, destination, torrent_id, path):
+        log.debug("DO EXTRACT.")
+        torrent = component.get('TorrentManager').torrents[torrent_id]
+        try:
+            log.debug('Extracting with command: "%s" from working dir "%s"', " ".join(cmd), str(destination))
+            process = subprocess.run(cmd, cwd=destination, capture_output=True)
+
+            if process.returncode == 0:
+                log.info('Extract successful!')
+            else:
+                log.error(
+                    'Extract failed: %s with code %s', path, process.returncode
+                )
+        except Exception:
+            log.error("Extract Exception:", traceback.format_exc())
+
+        # Don't mark an extracting torrent complete until callback is fired.
+        torrent.is_finished = True
+        log.info("Torrent extraction/handling complete.")
 
     @staticmethod
     def get_labels(torrent_id):
