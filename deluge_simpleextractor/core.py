@@ -13,18 +13,19 @@
 
 from __future__ import unicode_literals
 
-import deluge.component as component
-import deluge.configmanager
 import errno
 import logging
 import os
+import subprocess
+import traceback
+from shutil import which
+
+import deluge.component as component
+import deluge.configmanager
 from deluge.common import windows_check
 from deluge.configmanager import ConfigManager
 from deluge.core.rpcserver import export
 from deluge.plugins.pluginbase import CorePluginBase
-
-from twisted.internet.utils import getProcessOutputAndValue
-from twisted.python.procutils import which
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +42,6 @@ if windows_check():
         'C:\\Program Files (x86)\\7-Zip\\7z.exe'
     ]
 
-    switch_7z = 'x -y'
     # Future support:
     # 7-zip cannot extract tar.* with single command.
     #    ".tar.bz2", ".tbz",
@@ -51,10 +51,19 @@ if windows_check():
     exts_7z = ['.rar', '.zip', '.tar', '.7z', '.xz', '.lzma']
     for win_7z_exe in win_7z_exes:
         if which(win_7z_exe):
-            EXTRACT_COMMANDS = dict.fromkeys(exts_7z, [win_7z_exe, switch_7z])
+            EXTRACT_COMMANDS = {
+                '.r00': [win_7z_exe, 'x', '-y'],
+                '.rar': [win_7z_exe, 'x', '-y'],
+                '.zip': [win_7z_exe, 'x', '-y'],
+                '.tar': [win_7z_exe, 'x', '-y'],
+                '.7z': [win_7z_exe, 'x', '-y'],
+                '.xz': [win_7z_exe, 'x', '-y'],
+                '.lzma': [win_7z_exe, 'x', '-y']
+            }
             break
     # Windows 10 build 17063 added the 'nix Tar command, so let's support it. (No xz/bz2/lzma yet)
     if which('tar'):
+        log.info("Windows has TAR support, adding commands.")
         EXTRACT_COMMANDS['.tar'] = ['tar', '-xf'],
         EXTRACT_COMMANDS['.tar.gz'] = ['tar', '-xzf'],
         EXTRACT_COMMANDS['.tgz'] = ['tar', '-xzf']
@@ -63,16 +72,16 @@ else:
     required_cmds = ['unrar', 'unzip', 'tar', '7zr']
 
     EXTRACT_COMMANDS = {
-        '.rar': ['unrar', 'x -o+ -y'],
-        '.r00': ['unrar', 'x -o+ -y'],
+        '.rar': ['unrar', 'x', '-o+', '-y'],
+        '.r00': ['unrar', 'x', '-o+', '-y'],
         '.tar': ['tar', '-xf'],
-        '.zip': ['unzip', ''],
+        '.zip': ['unzip'],
         '.tar.gz': ['tar', '-xzf'],
         '.tgz': ['tar', '-xzf'],
         '.tar.bz2': ['tar', '-xjf'],
         '.tbz': ['tar', '-xjf'],
-        '.tar.lzma': ['tar', '--lzma -xf'],
-        '.tlz': ['tar', '--lzma -xf'],
+        '.tar.lzma': ['tar', '--lzma', '-xf'],
+        '.tlz': ['tar', '--lzma', '-xf'],
         '.tar.xz': ['tar', '-Jf'],
         '.txz': ['tar', '--xJf'],
         '.7z': ['7zr', 'x']
@@ -124,33 +133,27 @@ class Core(CorePluginBase):
         log.info("Labels collected: %s", labels)
         # If we've set a label filter, process it
         filters = self.config['label_filter']
-        log.info("Saved filters:", filters)
-        if filters != "":
-            # Make sure there's actually a label
-            if len(labels) > 0:
-                for label in labels:
-                    log.info("Label for torrent is %s", label)
-                    # Check if it's more than one, split
-                    if "," in self.config['label_filter']:
-                        log.info("And we have a list")
-                        label_list = filters.split(",")
-                        # And loop
-                        for check in label_list:
-                            print("Comparing " + label + " to " + check)
-                            if check.strip() == label:
-                                log.info("This matches, we should extract it.")
-                                do_extract = True
-                                break
-                    # Otherwise, just check the whole string
-                    else:
-                        log.info("Single label string detected: ", filters)
-                        if filters.strip() == label:
-                            log.info("This matches, we should extract it.")
-                            do_extract = True
-            # We don't need to do this, but it adds sanity
+        if filters != "" and len(labels) > 0:
+            log.info("Saved filters:", filters)
+            # Make the label list once, save needless processing.
+            if "," in self.config['label_filter']:
+                log.info("we have a list.")
+                label_list = filters.split(",")
             else:
-                log.info("We have a label filter and no label, doing nothing")
-                do_extract = False
+                label_list = [filters]
+            # Make sure there's actually a label
+            for label in labels:
+                log.info("Label for torrent is %s", label)
+                # Check if it's more than one, split
+                for check in label_list:
+                    print("Comparing %s to %s.", label, check)
+                    if check.strip() == label:
+                        log.info("This matches, we should extract it.")
+                        do_extract = True
+                        break
+                # We don't need to keep checking labels if we've found a match
+                if do_extract:
+                    break
         # Otherwise, we just extract everything
         else:
             log.info("No label, extracting.")
@@ -163,26 +166,29 @@ class Core(CorePluginBase):
         if do_extract:
             files = tid.get_files()
             for f in files:
-                log.info("Handling file %s", f['path'])
+                log.debug("Handling file %s", f['path'])
                 file_root, file_ext = os.path.splitext(f['path'])
                 file_ext_sec = os.path.splitext(file_root)[1]
-                if file_ext == '.r00' and any(x['path'] == file_root + '.rar' for x in files):
-                    log.info('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
-                    continue
-                elif file_ext_sec and file_ext_sec + file_ext in EXTRACT_COMMANDS:
-                    log.info("We should extract this.")
+                if file_ext_sec == ".tar":
                     file_ext = file_ext_sec + file_ext
-                elif file_ext not in EXTRACT_COMMANDS or file_ext_sec == '.tar':
-                    log.info('Cannot extract file with unknown file type: %s', f['path'])
+                    file_root = os.path.splitext(file_root)[0]
+                # IF it's not extractable, move on.
+                if file_ext not in EXTRACT_COMMANDS:
                     continue
-                elif file_ext == '.rar' and 'part' in file_ext_sec:
-                    part_num = file_ext_sec.split('part')[1]
+
+                # Check to prevent double extraction with rar/r00 files
+                if file_ext == '.r00' and any(x['path'] == file_root + '.rar' for x in files):
+                    log.debug('Skipping file with .r00 extension because a matching .rar file exists: %s', f['path'])
+                    continue
+
+                # Check for RAR archives with PART in the name
+                if file_ext == '.rar' and 'part' in file_root:
+                    part_num = file_root.split('part')[1]
                     if part_num.isdigit() and int(part_num) != 1:
-                        log.info('Skipping remaining multi-part rar files: %s', f['path'])
+                        log.debug('Skipping remaining multi-part rar files: %s', f['path'])
                         continue
 
-                cmd = EXTRACT_COMMANDS[file_ext]
-
+                log.info("Extracting %s", f)
                 fpath = os.path.normpath(os.path.join(t_status['download_location'], f['path']))
 
                 # Get the destination path, use that by default
@@ -196,65 +202,61 @@ class Core(CorePluginBase):
                 f_parent = os.path.normpath(os.path.join(t_status['download_location'], os.path.dirname(f['path'])))
                 if extract_in_place and ((not os.path.exists(f_parent)) or os.path.isdir(f_parent)):
                     dest = f_parent
-                    log.debug("Extracting in-place: " + dest)
+                    log.debug("Extracting in-place: %S", dest)
 
                 try:
                     os.makedirs(dest)
                 except OSError as ex:
                     if not (ex.errno == errno.EEXIST and os.path.isdir(dest)):
-                        log.error("EXTRACTOR: Error creating destination folder: %s", ex)
+                        log.error("Error creating destination folder: %s", ex)
                         break
 
-                def on_extract(result, torrent_id, fpath, tid):
-                    # Check command exit code.
-                    if not result[2]:
-                        log.info('Extract successful: %s (%s)', fpath, torrent_id)
+                # Lookup command array
+                cmd = EXTRACT_COMMANDS[file_ext]
+                # Append file path
+                cmd.append(fpath)
+
+                # Do it!
+                try:
+                    log.debug('Extracting with command: "%s" from working dir "%s"', " ".join(cmd), str(dest))
+                    process = subprocess.run(cmd, cwd=dest, capture_output=True)
+
+                    if process.returncode == 0:
+                        log.info('Extract successful!')
                     else:
                         log.error(
-                            'Extract failed: %s (%s) %s', fpath, torrent_id, result[1]
+                            'Extract failed: %s with code %s', fpath, process.returncode
                         )
-                    # Don't mark an extracting torrent complete until callback is fired.
-                    tid.is_finished = True
-                    log.info("Torrent extraction/handling complete.")
+                except Exception as ex:
+                    log.error("Exception:", traceback.format_exc())
 
-                # Run the command and add callback.
-                log.info(
-                    'Extracting %s from %s with %s %s to %s',
-                    fpath,
-                    torrent_id,
-                    cmd[0],
-                    cmd[1],
-                    dest,
-                )
-                d = getProcessOutputAndValue(
-                    cmd[0], cmd[1].split() + [str(fpath)], os.environ, str(dest)
-                )
-                d.addCallback(on_extract, torrent_id, fpath, tid)
+                # Don't mark an extracting torrent complete until callback is fired.
+                tid.is_finished = True
+                log.info("Torrent extraction/handling complete.")
+
         else:
             tid.is_finished = True
             log.info("Torrent extraction/handling complete.")
 
-    def get_labels(self, torrent_id):
+    @staticmethod
+    def get_labels(torrent_id):
         """
          Asking the system about the labels isn't very cool, so try this instead
         """
         labels = []
         label_config = ConfigManager('label.conf', defaults=False)
-        if label_config:
-            log.info("We have a Label config")
-            if 'torrent_labels' in label_config:
-                if torrent_id in label_config['torrent_labels']:
-                    log.info("Data from Label plugin: %s", label_config['torrent_labels'][torrent_id])
-                    labels.append(label_config['torrent_labels'][torrent_id])
+        if 'torrent_labels' in label_config:
+            log.debug("We have a Label config.")
+            if torrent_id in label_config['torrent_labels']:
+                labels.append(label_config['torrent_labels'][torrent_id])
 
         label_plus_config = ConfigManager('labelplus.conf', defaults=False)
-        if label_plus_config:
-            log.info("We have a label plus config")
-            if 'mappings' in label_plus_config:
-                if torrent_id in label_plus_config['mappings']:
-                    mapping = label_plus_config['mappings'][torrent_id]
-                    log.info("We have a label plus mapping: %s", mapping)
-                    labels.append(label_plus_config['labels'][mapping]['name'])
+        if 'mappings' in label_plus_config:
+            log.debug("We have a label plus config.")
+            if torrent_id in label_plus_config['mappings']:
+                mapping = label_plus_config['mappings'][torrent_id]
+                labels.append(label_plus_config['labels'][mapping]['name'])
+
         return labels
 
     @export
